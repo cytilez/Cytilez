@@ -479,8 +479,15 @@
       if (!unitId){ alert('Create a unit first.'); return; }
       for (const ev of events){
         const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
+
+        // nightly and totals from default
+        const nightlyRate = getUnitDefaultRate(unitId);
+        const cleaning = 0, fees = 0;
+        const total = nights * nightlyRate + cleaning + fees;
+
         const row = { id:uid(), unitId, guest: ev.summary || '', checkIn: ev.start, checkOut: ev.end, nights,
-          nightlyRate: getUnitDefaultRate(unitId), cleaning: 0, fees: 0, total: 0, source: 'iCal file', status: 'booked', notes: 'Imported from .ics', importUid: ev.uid||null };
+          nightlyRate, cleaning, fees, total, source: 'iCal file', status: 'booked', notes: 'Imported from .ics', importUid: ev.uid||null };
+
         if(findDupBooking(row)) continue;
         const conflicts=findOverlaps(unitId, ev.start, ev.end, null);
         if(conflicts.length){ row.status='hold'; flagged++; logConflict(row, conflicts, 'overlap-import'); }
@@ -637,7 +644,7 @@
     data.bookings = data.bookings.filter(x=> x.id!==editingBookingId);
     save(); closeBooking(); route();
   };
-    function recalcTotal(){
+  function recalcTotal(){
     const n = parseInt(document.getElementById('bkNights').value||'0',10);
     const nightly = parseFloat(document.getElementById('bkNightly').value||'0');
     const clean = parseFloat(document.getElementById('bkCleaning').value||'0');
@@ -646,7 +653,6 @@
     const kpi = document.getElementById('bkTotal');
     if (kpi) kpi.textContent = fmtMoney(total);
   }
-
   ['#bkNights','#bkNightly','#bkCleaning','#bkFees','#bkIn','#bkOut'].forEach(sel=>{
     const el = document.querySelector(sel);
     if(!el) return;
@@ -667,7 +673,7 @@
     const checkIn = document.getElementById('bkIn').value;
     const checkOut = document.getElementById('bkOut').value;
     const nights = parseInt(document.getElementById('bkNights').value||'0',10);
-    const nightlyRate = parseFloat(document.getElementById('bkNightly').value||'0');
+    let nightlyRate = parseFloat(document.getElementById('bkNightly').value||'0');
     const cleaning = parseFloat(document.getElementById('bkCleaning').value||'0');
     const fees = parseFloat(document.getElementById('bkFees').value||'0');
     const source = document.getElementById('bkSource').value;
@@ -675,6 +681,11 @@
     const notes = (document.getElementById('bkNotes').value||'').trim();
 
     if (!unitId || !checkIn || !checkOut || nights<=0){ alert('Please fill unit and valid dates.'); return; }
+
+    // fallback to unit default if empty/0
+    if (!isFinite(nightlyRate) || nightlyRate===0) {
+      nightlyRate = getUnitDefaultRate(unitId);
+    }
 
     const row = {
       id: editingBookingId || uid(),
@@ -684,7 +695,7 @@
       source, status, notes
     };
 
-    // duplicate detection (same unit + same dates + same guest OR same importUid)
+    // duplicate detection
     const dup = data.bookings.find(b =>
       b.id!==row.id && b.unitId===row.unitId &&
       ((b.importUid && row.importUid && b.importUid===row.importUid) ||
@@ -749,8 +760,14 @@
       if (!uidUnit){ alert('Create a unit first.'); return; }
       for (const ev of events){
         const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
+
+        const nightlyRate = getUnitDefaultRate(uidUnit);
+        const cleaning = 0, fees = 0;
+        const total = nights * nightlyRate + cleaning + fees;
+
         const row = { id:uid(), unitId: uidUnit, guest: ev.summary||'', checkIn: ev.start, checkOut: ev.end, nights,
-          nightlyRate: getUnitDefaultRate(uidUnit), cleaning:0, fees:0, total:0, source:'iCal file', status:'booked', notes:'Imported from .ics', importUid: ev.uid||null };
+          nightlyRate, cleaning, fees, total, source:'iCal file', status:'booked', notes:'Imported from .ics', importUid: ev.uid||null };
+
         if (findDupBooking(row)) continue;
         const conflicts=findOverlaps(uidUnit, ev.start, ev.end, null);
         if(conflicts.length){ row.status='hold'; flagged++; logConflict(row, conflicts, 'overlap-import'); }
@@ -780,8 +797,14 @@
         const events = parseICS(text);
         for (const ev of events){
           const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
+
+          const nightlyRate = getUnitDefaultRate(u.id);
+          const cleaning = 0, fees = 0;
+          const total = nights * nightlyRate + cleaning + fees;
+
           const row = { id:uid(), unitId: u.id, guest: ev.summary||'', checkIn: ev.start, checkOut: ev.end, nights,
-            nightlyRate: getUnitDefaultRate(u.id), cleaning:0, fees:0, total:0, source:'Other iCal', status:'booked', notes:'Imported via proxy', importUid: ev.uid||null };
+            nightlyRate, cleaning, fees, total, source:'Other iCal', status:'booked', notes:'Imported via proxy', importUid: ev.uid||null };
+
           if (findDupBooking(row)) continue;
           const conflicts=findOverlaps(u.id, ev.start, ev.end, null);
           if(conflicts.length){ row.status='hold'; flagged++; logConflict(row, conflicts, 'overlap-import'); }
@@ -849,8 +872,14 @@
           const events = parseICS(text);
           for (const ev of events){
             const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
+
+            const nightlyRate = getUnitDefaultRate(u.id);
+            const cleaning = 0, fees = 0;
+            const totalOne = nights * nightlyRate + cleaning + fees;
+
             const row = { id:uid(), unitId: u.id, guest: ev.summary||'', checkIn: ev.start, checkOut: ev.end, nights,
-              nightlyRate: getUnitDefaultRate(u.id), cleaning:0, fees:0, total:0, source:'Other iCal', status:'booked', notes:'Imported via proxy', importUid: ev.uid||null };
+              nightlyRate, cleaning, fees, total: totalOne, source:'Other iCal', status:'booked', notes:'Imported via proxy', importUid: ev.uid||null };
+
             if (findDupBooking(row)) continue;
             const conflicts=findOverlaps(u.id, ev.start, ev.end, null);
             if(conflicts.length){ row.status='hold'; flagged++; logConflict(row, conflicts, 'overlap-import'); }
@@ -863,14 +892,35 @@
     save(); toast(`Sync all: imported ${total} events${flagged?`, ${flagged} flagged`:''}.`); route();
   };
 
+  // ---------- Backfill older records without totals ----------
+  function backfillTotals(){
+    let fixed = 0;
+    for (const b of (data.bookings||[])) {
+      if (!isFinite(b.nightlyRate) || b.nightlyRate===0) {
+        b.nightlyRate = getUnitDefaultRate(b.unitId);
+      }
+      const nights = b.nights || Math.max(0, Math.round((new Date(b.checkOut)-new Date(b.checkIn))/(1000*60*60*24)));
+      if (!isFinite(b.total) || b.total===0) {
+        const cleaning = b.cleaning||0, fees = b.fees||0;
+        b.total = nights * (b.nightlyRate||0) + cleaning + fees;
+        fixed++;
+      }
+    }
+    if (fixed){ save(); toast(`Updated totals on ${fixed} existing bookings`); }
+  }
+
   // ---------- Init ----------
   (async function init(){
     proxyEnabled = await checkProxy();
     const ml = document.getElementById('modeLabel');
     if (ml) ml.textContent = proxyEnabled ? '(proxy ON)' : '(proxy OFF)';
-    // restore sidebar state
+    // restore sidebar
     setSidebarCollapsed(!!data.settings.sidebarCollapsed);
+    backfillTotals();                // ensure old records compute totals once
     renderUnitsList(); route(); updateConflictBadge();
   })();
 
 })();</script>
+</body>
+</html>
+
