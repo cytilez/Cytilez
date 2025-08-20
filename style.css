@@ -1,0 +1,11 @@
+body { font-family: sans-serif; background:#111; color:#eee; }
+#header { background:#222; padding:10px; }
+#header button { margin-right:5px; }
+#container { display:flex; }
+#sidebar { width:250px; background:#333; padding:10px; overflow-y:auto; }
+#view { flex:1; padding:10px; }
+button { background:#444; color:#eee; border:0; padding:4px 6px; margin:2px; cursor:pointer; font-size:12px; }
+button.primary { background:#2a6; }
+.right { text-align:right; }
+table { border-collapse:collapse; width:100%; margin-top:10px; }
+td,th { border:1px solid #555; padding:4px; }
