@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kael BnB Manager — Netlify + Functions (GitHub)</title>
+  <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px;line-height:1.5;background:#0f1116;color:#e9eef7}
+  a,button{color:#66b3ff} code{background:#1b2230;padding:2px 6px;border-radius:6px}
+  .muted{color:#9aa6b2}</style>
+</head>
+<body>
+  <h1>🏡 Kael BnB Manager</h1>
+  <p class="muted">This starter is ready for Netlify Functions via Git. Replace this page with your full app's <code>index.html</code> and <code>app.js</code> when you’re ready.</p>
+
+  <div id="app"></div>
+
+  <script>
+  // Simple proxy check and demo fetch button
+  async function checkProxy() {
+    try {
+      const r = await fetch('/.netlify/functions/fetch-ical?ping=1', { cache:'no-store' });
+      if (r.ok) return true;
+    } catch(e){}
+    return false;
+  }
+  (async () => {
+    const app = document.getElementById('app');
+    const ok = await checkProxy();
+    app.innerHTML = ok
+      ? '<p>✅ Netlify function detected. iCal URL fetch will work.</p>'
+      : '<p>⚠️ Function not detected. Double-check your repo structure.</p>';
+  })();
+  </script>
+</body>
+</html>
