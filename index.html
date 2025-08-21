@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Kael BnB Manager — Full UI</title>
 <style>
-  :root{
+   :root{
     --bg:#0f1116; --panel:#171a22; --panel2:#1d2330; --ink:#e9eef7; --muted:#9aa6b2; --accent:#66b3ff; --ok:#36d17b; --warn:#ffc857; --bad:#ff6b6b;
     --line:#0a0c11; --chip:#232b3a; --chip2:#263246;
   }
@@ -58,6 +58,85 @@
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .tiny{font-size:11px;color:var(--muted)}
+  /* --- Mobile polish ------------------------------------------------------- */
+@media (max-width: 768px){
+  html,body{font-size:15px}
+
+  header{
+    gap:8px;
+    padding:10px 12px;
+    flex-wrap:wrap;              /* allow wrapping on small screens */
+  }
+
+  /* Make the main tabs horizontally scrollable pills */
+  nav{
+    order:2;                     /* push nav below the title on wrap */
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:4px;
+    scrollbar-width:none;
+  }
+  nav::-webkit-scrollbar{display:none}
+  nav .tab{
+    white-space:nowrap;
+    padding:6px 8px;
+    font-size:13px;
+    border-radius:7px;
+  }
+
+  /* Action buttons on the right: allow wrap + shrink slightly */
+  header > .spacer{display:none} /* remove big spacer so buttons can wrap */
+  header > button,
+  header label.tiny,
+  #saveChangesBtn{
+    padding:6px 8px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  /* Layout: collapse sidebar by default on mobile */
+  main{grid-template-columns:1fr; padding:10px}
+  aside{display:none}            /* hidden unless user toggles */
+  body.sidebar-collapsed main{grid-template-columns:1fr} /* keep consistent */
+
+  /* Cards, grids, calendar density */
+  .calendar .cell{min-height:56px}
+  .date{font-size:10px; right:6px; top:4px}
+  .add-mini{font-size:10px}
+  .pill{font-size:11px; margin-top:14px; border-radius:7px}
+
+  /* Tables: make them scroll instead of overflowing */
+  table{
+    display:block;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    white-space:nowrap;
+    border-spacing:0;
+  }
+  thead, tbody, tr{display:table; width:100%} /* keep borders looking sane on iOS */
+
+  /* Inputs */
+  input,select,textarea,button{padding:7px 9px; font-size:14px}
+
+  /* Modals: use most of the screen & scroll inside */
+  .modal .sheet{
+    width:96vw;
+    max-height:90vh;
+    overflow:auto;
+  }
+
+  /* Section padding */
+  section{padding:10px}
+}
+
+/* Tiny phones */
+@media (max-width: 380px){
+  h1{font-size:16px}
+  nav .tab{padding:5px 7px; font-size:12px}
+  header > button,#saveChangesBtn{font-size:12px; padding:6px 7px}
+}
+
 </style>
 </head>
 <body>
