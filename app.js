@@ -7,22 +7,55 @@ function uid(){ return Math.random().toString(36).slice(2); }
 
 function unitName(id){ let u=data.units.find(x=>x.id===id); return u?u.name:"?"; }
 
-// Toggle Units sidebar
-let sidebarVisible=true;
+// --- globals & helpers (outside DOMContentLoaded) ---
+let sidebarVisible = true;     // track sidebar
+let dirty = false;             // track unsaved changes
+
+function markClean(){ dirty = false; }
+function markDirty(){ dirty = true; }
+
+// lightweight toast for this simplified file
+function toast(msg){ try{ alert(msg); }catch(_){} }
+
+// --- init once the DOM is ready ---
 document.addEventListener('DOMContentLoaded', ()=>{
   renderSidebar();
   renderCalendar();
-  document.getElementById('toggleUnits').onclick=()=>{
-    sidebarVisible=!sidebarVisible;
-    document.getElementById('sidebar').style.display=sidebarVisible?'block':'none';
-  };
-  document.getElementById('navCalendar').onclick=()=>renderCalendar();
-  document.getElementById('navExpenses').onclick=()=>renderExpenses();
-  document.getElementById('navSettings').onclick=()=>renderSettings();
-  document.getElementById('viewConflicts').onclick=()=>showConflicts();
-  document.getElementById('syncAll').onclick=()=>syncAll();
+
+  const $ = id => document.getElementById(id);
+
+  $('toggleUnits') && ($('toggleUnits').onclick = ()=>{
+    sidebarVisible = !sidebarVisible;
+    const sb = document.getElementById('sidebar');
+    if (sb) sb.style.display = sidebarVisible ? 'block' : 'none';
+  });
+
+  $('navCalendar')  && ($('navCalendar').onclick  = ()=>renderCalendar());
+  $('navExpenses')  && ($('navExpenses').onclick  = ()=>renderExpenses());
+  $('navSettings')  && ($('navSettings').onclick  = ()=>renderSettings());
+  $('viewConflicts')&& ($('viewConflicts').onclick= ()=>showConflicts());
+  $('syncAll')      && ($('syncAll').onclick      = ()=>syncAll());
+
+  // 🔥 Save Changes button
+  $('saveBtn') && ($('saveBtn').onclick = ()=>{
+    save();
+    markClean();
+    toast('Changes saved ✅');
+  });
+
+  // (optional) wire export/import only if you have these helpers defined
+  // $('exportBtn') && ($('exportBtn').onclick = ()=>exportData());
+  // $('importBtn') && ($('importBtn').onclick = ()=>$('importFile').click());
+  // $('importFile') && ($('importFile').onchange = importData);
+
   updateConflictBadge();
 });
+
+// warn if unsaved changes
+window.addEventListener('beforeunload', (e)=>{
+  if (dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
 
 function renderSidebar(){
   const sb=document.getElementById('sidebar');
