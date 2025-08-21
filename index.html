@@ -72,8 +72,8 @@
       <button class="tab" data-tab="earnings">Earnings</button>
       <button class="tab" data-tab="expenses">Expenses</button>
       <button class="tab" data-tab="settings">Settings</button>
-      <button id="saveChangesBtn" class="primary">Save changes</button>
-
+      <!-- 🔥 Save changes button -->
+      <button id="saveChangesBtn" class="primary">💾 Save changes</button>
     </nav>
     <span class="spacer"></span>
     <button id="toggleSidebar" title="Show/Hide units">Toggle units</button>
@@ -83,7 +83,6 @@
     <label class="tiny">Import JSON <input id="importFile" type="file" accept="application/json" style="display:none"></label>
     <button id="importBtn">Import…</button>
   </header>
-
   <main>
     <aside>
       <div class="row">
@@ -170,10 +169,10 @@
         </div>
       </div>
       <div class="row" style="gap:10px;margin-top:8px;flex-wrap:wrap">
-        <div class="col" style="flex:1;min-width:260px"><label>Airbnb iCal URL</label><input id="icalAirbnb" placeholder="https://...ics"></div>
-        <div class="col" style="flex:1;min-width:260px"><label>Booking.com iCal URL</label><input id="icalBooking" placeholder="https://...ics"></div>
-        <div class="col" style="flex:1;min-width:260px"><label>Vrbo iCal URL</label><input id="icalVrbo" placeholder="https://...ics"></div>
-        <div class="col" style="flex:1;min-width:260px"><label>Other iCal URL</label><input id="icalOther" placeholder="https://...ics"></div>
+        <div class="col" style="flex:1;min-width:260px"><label>Airbnb iCal URL</label><input id="icalAirbnb" placeholder="[https://...ics"></div]https://...ics"></div>
+        <div class="col" style="flex:1;min-width:260px"><label>Booking.com iCal URL</label><input id="icalBooking" placeholder="[https://...ics"></div]https://...ics"></div>
+        <div class="col" style="flex:1;min-width:260px"><label>Vrbo iCal URL</label><input id="icalVrbo" placeholder="[https://...ics"></div]https://...ics"></div>
+        <div class="col" style="flex:1;min-width:260px"><label>Other iCal URL</label><input id="icalOther" placeholder="[https://...ics"></div]https://...ics"></div>
       </div>
       <div class="row" style="margin-top:8px">
         <label class="tiny"><input id="autoSync" type="checkbox" /> Auto‑sync on app open</label>
@@ -184,7 +183,6 @@
       <div class="tiny" id="lastSyncRow" style="margin-top:6px"></div>
     </div>
   </div>
-
 <script>
 (function(){
   const $ = s => document.querySelector(s);
@@ -214,15 +212,13 @@
     }
   }
   function save(){
-  data.meta = data.meta || {};
-  data.meta.updatedAt = new Date().toISOString();
-  localStorage.setItem(KEY, JSON.stringify(data));
-  updateConflictBadge();
-  dirty = true; // mark as changed locally
-}
-function markClean(){ dirty = false; }
-
-  
+    data.meta = data.meta || {};
+    data.meta.updatedAt = new Date().toISOString();
+    localStorage.setItem(KEY, JSON.stringify(data));
+    updateConflictBadge();
+    dirty = true; // mark as changed locally
+  }
+  function markClean(){ dirty = false; }
 
   // ---------- Helpers ----------
   function uid(){ return 'id'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
@@ -387,14 +383,13 @@ function markClean(){ dirty = false; }
     </div>`;
   }
 
-  // ---------- Units & Calendars (with month toggle) ----------
+  // ---------- Units & Calendars ----------
   let unitsYear = new Date().getFullYear(), unitsMonth = new Date().getMonth();
   function renderUnitsView(){
     const view = $('#view');
     if (!data.units.length){
       view.innerHTML = `<div class="hint">Add some units on the left to begin.</div>`; return;
     }
-
     const ym = new Date(unitsYear, unitsMonth, 1).toLocaleString(undefined, { month:'long', year:'numeric' });
     let html = `
       <div class="calbar row" style="margin-bottom:12px">
@@ -407,7 +402,6 @@ function markClean(){ dirty = false; }
         <div class="tiny">Viewing month for all unit calendars</div>
       </div>
     `;
-
     html += data.units.map(u=>`
       <div class="card" style="margin-bottom:12px">
         <div class="row" style="align-items:center;margin-bottom:6px">
@@ -423,22 +417,11 @@ function markClean(){ dirty = false; }
         </div>
         ${renderUnitCalendar(u.id, unitsYear, unitsMonth)}
       </div>`).join('');
-
     view.innerHTML = html;
-
-    // Month controls
     const prev = document.getElementById('uPrev');
     const next = document.getElementById('uNext');
-    if (prev) prev.onclick = ()=>{
-      unitsMonth--; if (unitsMonth<0){ unitsMonth=11; unitsYear--; }
-      renderUnitsView();
-    };
-    if (next) next.onclick = ()=>{
-      unitsMonth++; if (unitsMonth>11){ unitsMonth=0; unitsYear++; }
-      renderUnitsView();
-    };
-
-    // Existing handlers
+    if (prev) prev.onclick = ()=>{ unitsMonth--; if (unitsMonth<0){ unitsMonth=11; unitsYear--; } renderUnitsView(); };
+    if (next) next.onclick = ()=>{ unitsMonth++; if (unitsMonth>11){ unitsMonth=0; unitsYear++; } renderUnitsView(); };
     $$('button[data-add]').forEach(b=> b.onclick=()=> openBookingModal({unitId:b.dataset.add}) );
     $$('button[data-sync]').forEach(b=> b.onclick=()=> openSyncModal(b.dataset.sync) );
     $$('input[data-rate]').forEach(inp=>{
@@ -463,7 +446,6 @@ function markClean(){ dirty = false; }
     html += `</div>`;
     return html;
   }
-
   // ---------- Bookings List ----------
   function renderBookings(){
     const view = $('#view');
@@ -506,10 +488,10 @@ function markClean(){ dirty = false; }
         <td>${b.guest||''}</td>
         <td>${b.checkIn}</td>
         <td>${b.checkOut}</td>
-        <td class="right">${b.nights}</td>
+        <td class="right">${b.nights||''}</td>
         <td class="right">${fmtMoney(b.total||0)}</td>
         <td>${b.source||''}</td>
-        <td><span class="badge">${b.status}</span></td>
+        <td><span class="badge">${b.status||''}</span></td>
         <td><button data-id="${b.id}">Edit</button></td>
       </tr>`).join('');
       $$('#bkRows [data-id]').forEach(btn=> btn.onclick=()=> openBookingModal({id:btn.dataset.id}) );
@@ -626,8 +608,7 @@ function markClean(){ dirty = false; }
     </tr>`).join('');
     $$('button[data-del]').forEach(btn=> btn.onclick=()=>{ data.expenses = data.expenses.filter(e=> e.id!==btn.dataset.del); save(); renderExpenses(); });
   }
-
-  // ---------- Settings (with Auto-restore toggle) ----------
+  // ---------- Settings ----------
   function renderSettings(){
     document.getElementById('view').innerHTML = `<div class="row">
       <div class="col"><label>Currency</label>
@@ -651,25 +632,21 @@ function markClean(){ dirty = false; }
     };
 
     document.getElementById('backupGit').onclick = async ()=>{
-  data.meta = data.meta || {}; data.meta.updatedAt = new Date().toISOString();
-  const res = await fetch('/.netlify/functions/push-data',{ method:'POST', body: JSON.stringify(data) });
-  if (res.ok){
-    markClean();
-    toast('Backup saved to GitHub ✅');
-  } else {
-    toast('Backup failed ❌');
-  }
-};
-  document.getElementById('restoreGit').onclick = async ()=>{
-  const res = await fetch('/.netlify/functions/pull-data',{ cache:'no-store' });
-  if(!res.ok){ toast('Restore failed ❌'); return; }
-  const json = await res.json();
-  if(!confirm('Replace your local data with the GitHub backup?')) return;
-  localStorage.setItem(KEY, JSON.stringify(json));
-  markClean();           // no unsaved-changes warning after restore
-  location.reload();     // reload to pick up restored data
-};
+      data.meta = data.meta || {}; data.meta.updatedAt = new Date().toISOString();
+      const res = await fetch('/.netlify/functions/push-data',{ method:'POST', body: JSON.stringify(data) });
+      if (res.ok){ markClean(); toast('Backup saved to GitHub ✅'); }
+      else { toast('Backup failed ❌'); }
+    };
 
+    document.getElementById('restoreGit').onclick = async ()=>{
+      const res = await fetch('/.netlify/functions/pull-data',{ cache:'no-store' });
+      if(!res.ok){ toast('Restore failed ❌'); return; }
+      const json = await res.json();
+      if(!confirm('Replace your local data with the GitHub backup?')) return;
+      localStorage.setItem(KEY, JSON.stringify(json));
+      markClean();
+      location.reload();
+    };
 
     document.getElementById('autoRestoreChk').onchange = (e)=>{
       data.settings.autoRestoreFromGit = !!e.target.checked;
@@ -730,7 +707,6 @@ function markClean(){ dirty = false; }
       recalcTotal();
     };
   });
-
   document.getElementById('saveBooking').onclick = ()=>{
     const unitId = document.getElementById('bkUnit').value;
     const guest = (document.getElementById('bkGuest').value||'').trim();
@@ -743,58 +719,30 @@ function markClean(){ dirty = false; }
     const source = document.getElementById('bkSource').value;
     const status = document.getElementById('bkStatus').value;
     const notes = (document.getElementById('bkNotes').value||'').trim();
-
     if (!unitId || !checkIn || !checkOut || nights<=0){ alert('Please fill unit and valid dates.'); return; }
     if (!isFinite(nightlyRate) || nightlyRate===0) nightlyRate = getUnitDefaultRate(unitId);
-
-    const row =
-    {
-      id: editingBookingId || uid(),
-      unitId,
-      guest,
-      checkIn,
-      checkOut,
-      nights,
-      nightlyRate,
-      cleaning,
-      fees,
-      total: nights*nightlyRate + cleaning + fees,
-      source,
-      status,
-      notes
+    const row = {
+      id: editingBookingId || uid(), unitId, guest, checkIn, checkOut, nights,
+      nightlyRate, cleaning, fees, total: nights*nightlyRate + cleaning + fees, source, status, notes
     };
-
-    // Duplicate check (same unit + same dates + same guest OR matching importUid)
     if(!editingBookingId){
       const dup = findDupBooking(row);
-      if (dup){
-        toast('Duplicate booking ignored'); return;
-      }
+      if (dup){ toast('Duplicate booking ignored'); return; }
     }
-
-    // Overlap check against non-cancelled, non-maintenance, non-blocked
     const conflicts = findOverlaps(unitId, checkIn, checkOut, editingBookingId||null);
     if (conflicts.length){
-      // Flag but allow saving; mark status=hold and log conflict
       row.status = row.status || 'hold';
       logConflict(row, conflicts, editingBookingId?'overlap-edit':'overlap-new');
     }
-
-    if (editingBookingId){
-      const b = data.bookings.find(x=>x.id===editingBookingId);
-      Object.assign(b, row);
-    } else {
-      data.bookings.push(row);
-    }
+    if (editingBookingId){ Object.assign(data.bookings.find(x=>x.id===editingBookingId), row); }
+    else { data.bookings.push(row); }
     save(); closeBooking(); route();
   };
-
   // ---------- Sync Modal & Logic ----------
   let syncUnitId=null;
   function openSyncModal(unitId){
     syncUnitId = unitId;
     const u = data.units.find(x=>x.id===unitId); if(!u) return;
-    // lazy init containers
     u.icals = u.icals || {airbnb:'',booking:'',vrbo:'',other:''};
     document.getElementById('icalAirbnb').value = u.icals.airbnb||'';
     document.getElementById('icalBooking').value = u.icals.booking||'';
@@ -818,7 +766,7 @@ function markClean(){ dirty = false; }
   };
   document.getElementById('syncClose').onclick = ()=> document.getElementById('syncModal').style.display='none';
 
-  // Upload .ics from Sync modal (same unit)
+  // Upload .ics for this unit
   document.getElementById('icsFile').addEventListener('change', async (e)=>{
     const f = e.target.files[0]; if(!f) return;
     const text = await f.text();
@@ -829,30 +777,14 @@ function markClean(){ dirty = false; }
     for (const ev of events){
       const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
       const nightlyRate = getUnitDefaultRate(u.id);
-      const rec = {
-        id: uid(),
-        unitId: u.id,
-        guest: ev.summary||'',
-        checkIn: ev.start,
-        checkOut: ev.end,
-        nights,
-        nightlyRate,
-        cleaning: 0,
-        fees: 0,
-        total: nights*nightlyRate,
-        source: 'iCal file',
-        status: 'booked',
-        notes: 'Imported from .ics',
-        importUid: ev.uid||null
-      };
+      const rec = { id: uid(), unitId: u.id, guest: ev.summary||'', checkIn: ev.start, checkOut: ev.end,
+        nights, nightlyRate, cleaning: 0, fees: 0, total: nights*nightlyRate, source: 'iCal file', status: 'booked', notes: 'Imported from .ics', importUid: ev.uid||null };
       if (findDupBooking(rec)) continue;
       const conf = findOverlaps(u.id, ev.start, ev.end, null);
       if (conf.length){ rec.status='hold'; flagged++; logConflict(rec, conf, 'overlap-import'); }
       data.bookings.push(rec); added++;
     }
-    save(); toast(`Imported ${added} events${flagged?`, ${flagged} flagged`:''}.`);
-    e.target.value='';
-    route();
+    save(); toast(`Imported ${added} events${flagged?`, ${flagged} flagged`:''}.`); e.target.value=''; route();
   });
 
   // Import via Netlify Function (proxy)
@@ -871,22 +803,8 @@ function markClean(){ dirty = false; }
         for (const ev of events){
           const nights = daysBetween(ev.start, ev.end); if (!nights) continue;
           const nightlyRate = getUnitDefaultRate(u.id);
-          const rec = {
-            id: uid(),
-            unitId: u.id,
-            guest: ev.summary||'',
-            checkIn: ev.start,
-            checkOut: ev.end,
-            nights,
-            nightlyRate,
-            cleaning: 0,
-            fees: 0,
-            total: nights*nightlyRate,
-            source: 'Other iCal',
-            status: 'booked',
-            notes: 'Imported via proxy',
-            importUid: ev.uid||null
-          };
+          const rec = { id: uid(), unitId: u.id, guest: ev.summary||'', checkIn: ev.start, checkOut: ev.end,
+            nights, nightlyRate, cleaning: 0, fees: 0, total: nights*nightlyRate, source:'Other iCal', status:'booked', notes:'Imported via proxy', importUid: ev.uid||null };
           if (findDupBooking(rec)) continue;
           const conf = findOverlaps(u.id, ev.start, ev.end, null);
           if (conf.length){ rec.status='hold'; flagged++; logConflict(rec, conf, 'overlap-import'); }
@@ -898,7 +816,7 @@ function markClean(){ dirty = false; }
     save(); toast(`Imported ${totalAdded} events${flagged?`, ${flagged} flagged`:''}.`); route();
   };
 
-  // ---------- ICS parser (simple) ----------
+  // ---------- ICS parser ----------
   function parseICS(text){
     const lines = text.split(/\r?\n/);
     const events=[]; let cur=null;
@@ -906,7 +824,6 @@ function markClean(){ dirty = false; }
       if (!v) return null;
       if (/^\d{8}$/.test(v)){ const y=v.slice(0,4), m=v.slice(4,6), d=v.slice(6,8); return `${y}-${m}-${d}`; }
       if (/^\d{8}T\d{6}Z?$/.test(v)){ const y=v.slice(0,4), m=v.slice(4,6), d=v.slice(6,8); return `${y}-${m}-${d}`; }
-      // Fallback: try parseable date
       const d = new Date(v); if(!isNaN(d)) return toISO(d);
       return v;
     };
@@ -949,7 +866,7 @@ function markClean(){ dirty = false; }
     reader.readAsText(f);
   };
 
-  // ---------- GitHub helpers for Auto‑restore ----------
+  // ---------- GitHub helpers ----------
   async function fetchGitBackup(){
     try{
       const res = await fetch('/.netlify/functions/pull-data', {cache:'no-store'});
@@ -961,6 +878,9 @@ function markClean(){ dirty = false; }
     if (!aIso) return false;
     if (!bIso) return true;
     return new Date(aIso).getTime() > new Date(bIso).getTime();
+  }
+  function hasMeaningfulLocalData(){
+    return (data.units && data.units.length) || (data.bookings && data.bookings.length) || (data.expenses && data.expenses.length);
   }
 
   // ---------- Header actions ----------
@@ -1002,7 +922,19 @@ function markClean(){ dirty = false; }
     save(); toast(`Sync all: ${total} added${flagged?`, ${flagged} flagged`:''}.`); route();
   };
 
-  // ---------- Init (Auto‑restore ON by default) ----------
+  // Wire the "Save changes" header button
+  (function(){
+    const btn = document.getElementById('saveChangesBtn');
+    if (btn){
+      btn.onclick = ()=>{
+        save();
+        markClean();
+        toast('Changes saved ✅');
+      };
+    }
+  })();
+
+  // ---------- Init (Auto‑restore ON by default, first-load friendly) ----------
   (async function init(){
     // Detect proxy (Netlify function)
     proxyEnabled = await checkProxy();
@@ -1012,19 +944,19 @@ function markClean(){ dirty = false; }
     // Restore sidebar state
     setSidebarCollapsed(!!data.settings.sidebarCollapsed);
 
-    // Auto‑restore from GitHub (default ON)
+    // Auto‑restore from GitHub
     if (data.settings.autoRestoreFromGit){
       const remote = await fetchGitBackup();
       if (remote && remote.units && remote.bookings){
-        const remoteTS = remote.meta && remote.meta.updatedAt;
-        const localTS  = data.meta && data.meta.updatedAt;
-        const shouldReplace =
-          newerThan(remoteTS, localTS) ||
-          (!localTS && (data.units.length===0 && data.bookings.length===0));
+        const remoteTS = remote?.meta?.updatedAt || null;
+        const localTS  = data?.meta?.updatedAt  || null;
+        const noLocalData = !hasMeaningfulLocalData();
+        const shouldReplace = noLocalData || newerThan(remoteTS, localTS);
 
         if (shouldReplace){
           localStorage.setItem(KEY, JSON.stringify(remote));
           Object.assign(data, remote);
+          markClean();
           toast('Auto‑restored from GitHub');
         }
       }
@@ -1032,15 +964,16 @@ function markClean(){ dirty = false; }
 
     renderUnitsList(); route(); updateConflictBadge();
   })();
-window.addEventListener('beforeunload', (e)=>{
-  if (dirty) {
-    e.preventDefault();
-    e.returnValue = ''; // required to trigger the native dialog
-  }
-});
 
-})();</script>
+  // Warn if leaving with unsaved changes
+  window.addEventListener('beforeunload', (e)=>{
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+})(); // end IIFE
+</script>
 </body>
 </html>
-
 
