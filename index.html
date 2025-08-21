@@ -197,6 +197,7 @@
   // ---------- Storage ----------
   const KEY = 'kael_bnb_v1';
   const data = load();
+  let dirty = false; // track unsaved local changes
   function load(){
     try{
       const raw = localStorage.getItem(KEY);
@@ -211,11 +212,15 @@
     }
   }
   function save(){
-    data.meta = data.meta || {};
-    data.meta.updatedAt = new Date().toISOString();
-    localStorage.setItem(KEY, JSON.stringify(data));
-    updateConflictBadge();
-  }
+  data.meta = data.meta || {};
+  data.meta.updatedAt = new Date().toISOString();
+  localStorage.setItem(KEY, JSON.stringify(data));
+  updateConflictBadge();
+  dirty = true; // mark as changed locally
+}
+function markClean(){ dirty = false; }
+
+  
 
   // ---------- Helpers ----------
   function uid(){ return 'id'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
@@ -642,19 +647,28 @@
     document.getElementById('setCur').onchange = ()=>{
       data.settings.currency = document.getElementById('setCur').value; save(); toast('Saved.');
     };
+
     document.getElementById('backupGit').onclick = async ()=>{
-      data.meta = data.meta || {}; data.meta.updatedAt = new Date().toISOString();
-      const res = await fetch('/.netlify/functions/push-data',{ method:'POST', body: JSON.stringify(data) });
-      toast(res.ok?'Backup saved to GitHub ✅':'Backup failed ❌');
-    };
-    document.getElementById('restoreGit').onclick = async ()=>{
-      const res = await fetch('/.netlify/functions/pull-data',{ cache:'no-store' });
-      if(!res.ok){ toast('Restore failed ❌'); return; }
-      const json = await res.json();
-      if(!confirm('Replace your local data with the GitHub backup?')) return;
-      localStorage.setItem(KEY, JSON.stringify(json));
-      location.reload();
-    };
+  data.meta = data.meta || {}; data.meta.updatedAt = new Date().toISOString();
+  const res = await fetch('/.netlify/functions/push-data',{ method:'POST', body: JSON.stringify(data) });
+  if (res.ok){
+    markClean();
+    toast('Backup saved to GitHub ✅');
+  } else {
+    toast('Backup failed ❌');
+  }
+};
+  document.getElementById('restoreGit').onclick = async ()=>{
+  const res = await fetch('/.netlify/functions/pull-data',{ cache:'no-store' });
+  if(!res.ok){ toast('Restore failed ❌'); return; }
+  const json = await res.json();
+  if(!confirm('Replace your local data with the GitHub backup?')) return;
+  localStorage.setItem(KEY, JSON.stringify(json));
+  markClean();           // no unsaved-changes warning after restore
+  location.reload();     // reload to pick up restored data
+};
+
+
     document.getElementById('autoRestoreChk').onchange = (e)=>{
       data.settings.autoRestoreFromGit = !!e.target.checked;
       save(); toast('Auto‑restore setting saved.');
@@ -1016,6 +1030,12 @@
 
     renderUnitsList(); route(); updateConflictBadge();
   })();
+window.addEventListener('beforeunload', (e)=>{
+  if (dirty) {
+    e.preventDefault();
+    e.returnValue = ''; // required to trigger the native dialog
+  }
+});
 
 })();</script>
 </body>
