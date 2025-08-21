@@ -922,56 +922,135 @@
     save(); toast(`Sync all: ${total} added${flagged?`, ${flagged} flagged`:''}.`); route();
   };
 
-  // Wire the "Save changes" header button
-  (function(){
-    const btn = document.getElementById('saveChangesBtn');
-    if (btn){
-      btn.onclick = ()=>{
-        save();
-        markClean();
-        toast('Changes saved ✅');
-      };
+ 
+ // Wire "Save changes" to: save locally + push to GitHub (same as Settings → Backup)
+(function(){
+  const btn = document.getElementById('saveChangesBtn');
+  if (!btn) return;
+
+  btn.onclick = async ()=>{
+    // Save local first & bump updatedAt (same as backup button)
+    data.meta = data.meta || {};
+    data.meta.updatedAt = new Date().toISOString();
+    localStorage.setItem(KEY, JSON.stringify(data));
+    updateConflictBadge();
+
+    // Push to GitHub (same endpoint as Settings → Backup)
+    try{
+      const res = await fetch('/.netlify/functions/push-data', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('push failed');
+      markClean();
+      toast('Saved locally + GitHub ✅');
+    }catch(e){
+      // Still saved locally even if GitHub fails
+      toast('Saved locally. GitHub backup failed ❌');
     }
-  })();
+  };
+})();
 
-  // ---------- Init (Auto‑restore ON by default, first-load friendly) ----------
-  (async function init(){
-    // Detect proxy (Netlify function)
-    proxyEnabled = await checkProxy();
-    const ml = document.getElementById('modeLabel');
-    if (ml) ml.textContent = proxyEnabled ? '(proxy ON)' : '(proxy OFF)';
+// --- Auto-backup helpers ---
+function buildBackupPayload(){
+  // bump updatedAt and persist to localStorage first
+  data.meta = data.meta || {};
+  data.meta.updatedAt = new Date().toISOString();
+  localStorage.setItem(KEY, JSON.stringify(data));
+  updateConflictBadge();
+  return JSON.stringify(data);
+}
 
-    // Restore sidebar state
-    setSidebarCollapsed(!!data.settings.sidebarCollapsed);
+function sendBackupBeacon(payload){
+  try{
+    if (navigator.sendBeacon){
+      const blob = new Blob([payload], { type: 'application/json' });
+      return navigator.sendBeacon('/.netlify/functions/push-data', blob);
+    }
+  }catch(_){}
+  return false;
+}
 
-    // Auto‑restore from GitHub
-    if (data.settings.autoRestoreFromGit){
-      const remote = await fetchGitBackup();
+async function sendBackupKeepalive(payload){
+  try{
+    // keepalive lets the request finish after unload (supported in modern browsers)
+    await fetch('/.netlify/functions/push-data', {
+      method: 'POST',
+      body: payload,
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      cache: 'no-store'
+    });
+    return true;
+  }catch(_){ return false; }
+}
+  
+
+  // ---------- Init (ALWAYS restore from GitHub on open if available) ----------
+(async function init(){
+  // Detect proxy (Netlify function)
+  proxyEnabled = await checkProxy();
+  const ml = document.getElementById('modeLabel');
+  if (ml) ml.textContent = proxyEnabled ? '(proxy ON)' : '(proxy OFF)';
+
+  // Restore sidebar state
+  setSidebarCollapsed(!!data.settings.sidebarCollapsed);
+
+  // Force "Restore from GitHub" on startup (no timestamp checks).
+  try{
+    const res = await fetch('/.netlify/functions/pull-data', { cache:'no-store' });
+    if (res.ok){
+      const remote = await res.json();
       if (remote && remote.units && remote.bookings){
-        const remoteTS = remote?.meta?.updatedAt || null;
-        const localTS  = data?.meta?.updatedAt  || null;
-        const noLocalData = !hasMeaningfulLocalData();
-        const shouldReplace = noLocalData || newerThan(remoteTS, localTS);
-
-        if (shouldReplace){
-          localStorage.setItem(KEY, JSON.stringify(remote));
-          Object.assign(data, remote);
-          markClean();
-          toast('Auto‑restored from GitHub');
-        }
+        localStorage.setItem(KEY, JSON.stringify(remote)); // identical to clicking the Settings button
+        Object.assign(data, remote);
+        markClean();
+        toast('Restored from GitHub on startup ✅');
       }
     }
+  }catch(e){
+    // silently ignore if offline / function not available
+  }
 
-    renderUnitsList(); route(); updateConflictBadge();
-  })();
+  renderUnitsList(); route(); updateConflictBadge();
+})();
 
-  // Warn if leaving with unsaved changes
-  window.addEventListener('beforeunload', (e)=>{
-    if (dirty) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
+
+ // --- Auto-backup on close / background if there are unsaved changes ---
+async function autoBackupIfDirty(){
+  if (!dirty) return;                 // only if there are unsaved changes
+  const payload = buildBackupPayload();
+
+  // 1) Try beacon (most reliable on unload)
+  const okBeacon = sendBackupBeacon(payload);
+
+  // 2) If beacon not available/failed, try keepalive fetch
+  if (!okBeacon) await sendBackupKeepalive(payload);
+
+  // we consider it "clean" after we attempted the upload
+  markClean();
+}
+
+// Fire on tab close/navigation
+window.addEventListener('beforeunload', (e)=>{
+  if (dirty){
+    // Kick off backup; don't block unload
+    autoBackupIfDirty();
+
+    // If you still want the warning dialog, keep these two lines:
+    // e.preventDefault();
+    // e.returnValue = '';
+  }
+});
+
+// Fire when the page is backgrounded (helps iOS Safari)
+document.addEventListener('visibilitychange', ()=>{
+  if (document.visibilityState === 'hidden') autoBackupIfDirty();
+});
+
+// Fire on pagehide (Safari)
+window.addEventListener('pagehide', ()=> autoBackupIfDirty());
+
 })(); // end IIFE
 </script>
 </body>
